@@ -77,3 +77,20 @@ export async function getFilesList({ token, apiKey, fileName }) {
     .then((response) => response.json());
 
 }
+
+export async function getFile({ token, apiKey, fileId }) {
+
+  const init = {
+    method: 'GET',
+    async: true,
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  };
+
+  return fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${apiKey}`,
+    init)
+    .then((response) => response.blob());
+
+}

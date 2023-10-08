@@ -59,12 +59,16 @@ export class CircularQueue {
 
   // Check if the queue is empty
   isEmpty() {
+
     return this.#size === 0;
+
   }
 
   // Check if the queue is full
   isFull() {
+
     return this.#size === this.#capacity;
+
   }
 
   // Get the front element without dequeuing it
@@ -81,7 +85,9 @@ export class CircularQueue {
 
   // Get the size of the queue
   getSize() {
+
     return this.#size;
+
   }
 
   getClonedArray() {
@@ -113,19 +119,53 @@ export class CircularQueue {
 
     const elements = this.getClonedArray();
 
-    console.log('Queue:', elements.join(' -> '));
+    console.log('CircularQueue:', elements.join(' -> '));
 
   }
 
   toJSON() {
 
-    return this.getClonedArray();
+    const clonedArr = this.getClonedArray();
+
+    // console.log('CircularQueue#toJSON');
+    // console.log(clonedArr);
+
+    return clonedArr;
 
   }
 
   toString() {
 
     return JSON.stringify(this.getClonedArray());
+
+  }
+
+  serialize() {
+
+    return this.toString();
+
+  }
+
+  deserialize(stringData) {
+
+    try {
+
+      const dataArr = JSON.parse(stringData);
+
+      // console.log('CircularQueue#deserialize');
+      // console.log(dataArr);
+
+      if (Array.isArray(dataArr)) {
+
+        dataArr.forEach(item => this.enqueue(item));
+
+      }
+
+    } catch (err) {
+
+      console.log(`Deserialization error: ${err}`);
+
+    }
 
   }
 

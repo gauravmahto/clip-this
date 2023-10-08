@@ -2,7 +2,8 @@
 
 import {
   setupOffscreenDocument, ChromeAlarms, ClipboardMessagePortName, Message,
-  uploadClipboardData, getGoogleAuthToken, GDriveAPIKey, DriveFileName, callDriveApiWithRetry
+  uploadClipboardData, getGoogleAuthToken, GDriveAPIKey, DriveFileName, callDriveApiWithRetry,
+  getClipboardFileId, getClipboardFile
 } from './utils_module.js';
 import { CircularQueue } from './circular-queue-module.js';
 import { getFilesList } from './drive-api-module.js';
@@ -168,8 +169,6 @@ export class ClipManager {
 
     const output = await callDriveApiWithRetry(getFilesList, { token: token, apiKey: GDriveAPIKey, fileName: DriveFileName.Clipboard });
 
-    console.log(output);
-
   }
 
   static async #pollCopiedData() {
@@ -260,6 +259,23 @@ export class ClipManager {
     //   ClipManager.#listenResumeId = undefined;
 
     // }
+
+    const fileId = await getClipboardFileId();
+    const token = await getGoogleAuthToken();
+
+    if (typeof fileId !== 'undefined') {
+
+      const file = await getClipboardFile(token, fileId);
+
+      if (null !== file) {
+
+        const fileStr = await file.text();
+
+        this.#queue.deserialize(fileStr);
+
+      }
+
+    }
 
     const actionCb = (alarm) => {
 

@@ -1,4 +1,4 @@
-import { updateFileData, uploadData } from './drive-api-module.js';
+import { getFile, updateFileData, uploadData } from './drive-api-module.js';
 import { GDriveAPIKey } from './sensitive-module.js';
 
 export { GDriveAPIKey } from './sensitive-module.js';
@@ -161,6 +161,16 @@ export async function saveClipboardFileId(fileId) {
 export async function getClipboardFileId() {
 
   return (await chrome.storage.local.get([GDriveClipboardIdKey]))?.[GDriveClipboardIdKey];
+
+}
+
+export async function getClipboardFile(token, fileId) {
+
+  return await callDriveApiWithRetry(getFile, {
+    token,
+    apiKey: GDriveAPIKey,
+    fileId
+  });
 
 }
 
