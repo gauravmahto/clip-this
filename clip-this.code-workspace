@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "clip-this-chrome-ext"
+		}
+	],
+	"settings": {
+		"workbench.colorCustomizations": {
+			"activityBar.background": "#28310B",
+			"titleBar.activeBackground": "#38450F",
+			"titleBar.activeForeground": "#F8FBEE"
+		}
+	}
+}
