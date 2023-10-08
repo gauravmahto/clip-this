@@ -1,0 +1,46 @@
+{
+  "name": "Clip This",
+  "description": "Clip This chrome extension helps to sync the clipboard across devices",
+  "version": "1.0",
+  "manifest_version": 3,
+  "minimum_chrome_version": "92",
+  "action": {
+    "default_popup": "clip_this.html",
+    "default_icon": "images/clip_this_extensions.png",
+    "default_title": "Click Me"
+  },
+  "incognito": "not_allowed",
+  "permissions": [
+    "background",
+    "clipboardRead",
+    "clipboardWrite",
+    "debugger",
+    "notifications",
+    "identity",
+    "identity.email",
+    "storage",
+    "contextMenus",
+    "downloads",
+    "offscreen",
+    "tabs",
+    "webRequest",
+    "alarms"
+  ],
+  "background": {
+    "service_worker": "background_worker.js",
+    "type": "module"
+  },
+  "oauth2": {
+    "client_id": "759693837281-u0ol78vvdn5c6id6ad45l7eel3vfcrpj.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "openid",
+      "email",
+      "profile",
+      "https://www.googleapis.com/auth/drive.appdata",
+      "https://www.googleapis.com/auth/drive.file"
+    ]
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvaeg0d+qaOuzOpIhWzRku91rjnS3/s3Bl2KlLHIcNmD+7tZhw+ucn3paVlMXoMrua//Zr3eIIA+jq+0b2eo6swFbuqMZx0qLp55BUcaQV2b557VaMaoXcYXA+TOHbpXpY3rCsMjFDzvW6cP2S0rnniw6FSJNotrTbZX+/8D0PT2xaLf1BnVKi9tbsBZgUcehyyWbq8J+8g7T2A22DfsTsyTqPsiqRi8qbBzSs9RBD6I7WZ23UnrJRGTizoAm/8ESLFiKKMIG+Yi6YM71oqgp90eETncccLeQXS4SNXfpHZiycH4rLYuQj2Hh0dvLB3IdRSWBUwRkRsMkxneReSSKNQIDAQAB"
+}
