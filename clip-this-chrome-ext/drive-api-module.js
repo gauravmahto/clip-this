@@ -94,3 +94,19 @@ export async function getFile({ token, apiKey, fileId }) {
     .then((response) => response.blob());
 
 }
+
+export async function deleteFile({ token, apiKey, fileId }) {
+
+  const init = {
+    method: 'DELETE',
+    async: true,
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  };
+
+  return fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?key=${apiKey}`,
+    init);
+
+}

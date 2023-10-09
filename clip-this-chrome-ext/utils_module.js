@@ -1,4 +1,4 @@
-import { getFile, updateFileData, uploadData } from './drive-api-module.js';
+import { getFile, updateFileData, uploadData, deleteFile as deleteDriveFile, getFilesList } from './drive-api-module.js';
 import { GDriveAPIKey } from './sensitive-module.js';
 
 export { GDriveAPIKey } from './sensitive-module.js';
@@ -34,6 +34,12 @@ export const DriveFileName = {
 
   Clipboard: 'clipboard.txt',
   Token: 'token.txt'
+
+};
+
+export const DriveKind = {
+
+  File: 'drive#file'
 
 };
 
@@ -167,6 +173,28 @@ export async function getClipboardFileId() {
 export async function getClipboardFile(token, fileId) {
 
   return await callDriveApiWithRetry(getFile, {
+    token,
+    apiKey: GDriveAPIKey,
+    fileId
+  });
+
+}
+
+export async function getFileList(token) {
+
+  const fileList = await callDriveApiWithRetry(getFilesList, {
+    token: token,
+    apiKey: GDriveAPIKey,
+    fileName: DriveFileName.Clipboard
+  });
+
+  return fileList.files ?? void 0;
+
+}
+
+export async function deleteFile(token, fileId) {
+
+  return await callDriveApiWithRetry(deleteDriveFile, {
     token,
     apiKey: GDriveAPIKey,
     fileId

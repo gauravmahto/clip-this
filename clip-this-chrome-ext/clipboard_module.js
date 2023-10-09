@@ -2,11 +2,10 @@
 
 import {
   setupOffscreenDocument, ChromeAlarms, ClipboardMessagePortName, Message,
-  uploadClipboardData, getGoogleAuthToken, GDriveAPIKey, DriveFileName, callDriveApiWithRetry,
-  getClipboardFileId, getClipboardFile
+  uploadClipboardData, getGoogleAuthToken,
+  getClipboardFileId, getClipboardFile, getFileList, deleteFile
 } from './utils_module.js';
 import { CircularQueue } from './circular-queue-module.js';
-import { getFilesList } from './drive-api-module.js';
 
 // In order to reduce the load on the user's machine, Chrome limits alarms to at most once every 1 minute but may delay them an arbitrary amount more. 
 // That is, setting delayInMinutes or periodInMinutes to less than 1 will not be honored and will cause a warning. 
@@ -22,52 +21,6 @@ export class ClipManager {
   static #messagePort = void 0;
   static #promiseResCb = void 0;
   static #queue = new CircularQueue(10);
-
-  static #waitForMessagePort() {
-
-    return new Promise(async (res, rej) => {
-
-      const waitForMessagePort = async () => {
-
-        if (typeof this.#messagePort === 'undefined') {
-
-          rej('Connection not established .. retrying in 500ms');
-
-          chrome.alarms.onAlarm.removeListener(actionCb);
-          await chrome.alarms.clear(ChromeAlarms.SetupOffscreenDocument);
-
-        } else {
-
-          res(void 0);
-
-          chrome.alarms.onAlarm.removeListener(actionCb);
-          await chrome.alarms.clear(ChromeAlarms.SetupOffscreenDocument);
-
-        }
-
-      };
-
-      const actionCb = async (alarm) => {
-
-        // console.log(alarm.name);
-
-        if (alarm.name === ChromeAlarms.SetupOffscreenDocument) {
-
-          await waitForMessagePort();
-
-        }
-
-      };
-
-      chrome.alarms.onAlarm.addListener(actionCb);
-
-      await chrome.alarms.create(ChromeAlarms.SetupOffscreenDocument, {
-        periodInMinutes: 1 / 120
-      });
-
-    });
-
-  }
 
   static async setupOffscreenDocument(path) {
 
@@ -149,90 +102,45 @@ export class ClipManager {
 
   }
 
-  static async #updateDriveData() {
+  static async initialize() {
 
+    const fileId = await getClipboardFileId();
     const token = await getGoogleAuthToken();
 
-    console.assert(typeof token !== 'undefined');
+    if (typeof fileId !== 'undefined') {
 
-    const output = await uploadClipboardData(token, JSON.stringify(this.#queue));
+      const file = await getClipboardFile(token, fileId);
 
-    console.log(output);
+      if (null !== file) {
 
-  }
+        const fileStr = await file.text();
 
-  static async #listDriveFiles() {
+        this.#queue.deserialize(fileStr);
 
-    const token = await getGoogleAuthToken();
+      }
 
-    console.assert(typeof token !== 'undefined');
+      console.log(`File id ${fileId}`);
 
-    const output = await callDriveApiWithRetry(getFilesList, { token: token, apiKey: GDriveAPIKey, fileName: DriveFileName.Clipboard });
+      let fileList = await this.#listDriveFiles();
 
-  }
+      if (Array.isArray(fileList)) {
 
-  static async #pollCopiedData() {
+        console.log('FileList');
+        console.log(fileList);
 
-    let clip;
+        fileList = fileList.filter(file => file.id !== fileId);
 
-    try {
+        // Delete other files
+        for (const fileId of fileList) {
 
-      clip = await ClipManager.sendReadMessage();
+          console.warn(`Deleting unused file ${fileId.id} from drive`);
+          await deleteFile(token, fileId.id);
 
-    } catch (err) {
+        }
 
-      console.error(err);
-
-      return;
-
-    }
-
-    if (
-      !clip ||
-      clip.trim().length === 0 ||
-      (ClipManager.#lastContent &&
-        clip.trim() === ClipManager.#lastContent.trim())
-    ) {
-
-      // Same data or empty
-      return;
+      }
 
     }
-
-    ClipManager.#lastContent = clip;
-
-    // Skip the first time
-    if (ClipManager._skipListening) {
-
-      ClipManager._skipListening = false;
-
-      return;
-
-    }
-
-    console.log(ClipManager.#lastContent);
-
-    this.#queue.enqueue(ClipManager.#lastContent);
-
-    await this.#updateDriveData();
-
-    console.log(await this.#listDriveFiles());
-
-    // const fileType = 'text/plain';
-    // if (validURL(ClipManager.#lastContent)) {
-    //   fileType = 'text/link';
-    // }
-
-    // gaSendEvent({
-    //   'eventCategory': 'send',
-    //   'eventAction': 'desktop_txt_native',
-    //   'eventLabel': fileType
-    // });
-
-    // DriveManager.uploadText(fileType, ClipManager.#lastContent)
-    //   .then((fileId) => {
-    //     return BackendManager.send(fileType, fileId);
-    //   });
 
   }
 
@@ -259,23 +167,6 @@ export class ClipManager {
     //   ClipManager.#listenResumeId = undefined;
 
     // }
-
-    const fileId = await getClipboardFileId();
-    const token = await getGoogleAuthToken();
-
-    if (typeof fileId !== 'undefined') {
-
-      const file = await getClipboardFile(token, fileId);
-
-      if (null !== file) {
-
-        const fileStr = await file.text();
-
-        this.#queue.deserialize(fileStr);
-
-      }
-
-    }
 
     const actionCb = (alarm) => {
 
@@ -383,6 +274,140 @@ export class ClipManager {
       document.body.removeChild(img);
       window.getSelection().removeAllRanges();
     };
+  }
+
+  // Private
+
+  static async #pollCopiedData() {
+
+    let clip;
+
+    try {
+
+      clip = await ClipManager.sendReadMessage();
+
+    } catch (err) {
+
+      console.error(err);
+
+      return;
+
+    }
+
+    if (
+      !clip ||
+      clip.trim().length === 0 ||
+      (ClipManager.#lastContent &&
+        clip.trim() === ClipManager.#lastContent.trim())
+    ) {
+
+      // Same data or empty
+      return;
+
+    }
+
+    ClipManager.#lastContent = clip;
+
+    // Skip the first time
+    if (ClipManager._skipListening) {
+
+      ClipManager._skipListening = false;
+
+      return;
+
+    }
+
+    console.log(ClipManager.#lastContent);
+
+    this.#queue.enqueue(ClipManager.#lastContent);
+
+    await this.#updateDriveData();
+
+    // const fileType = 'text/plain';
+    // if (validURL(ClipManager.#lastContent)) {
+    //   fileType = 'text/link';
+    // }
+
+    // gaSendEvent({
+    //   'eventCategory': 'send',
+    //   'eventAction': 'desktop_txt_native',
+    //   'eventLabel': fileType
+    // });
+
+    // DriveManager.uploadText(fileType, ClipManager.#lastContent)
+    //   .then((fileId) => {
+    //     return BackendManager.send(fileType, fileId);
+    //   });
+
+  }
+
+  static #waitForMessagePort() {
+
+    return new Promise(async (res, rej) => {
+
+      const waitForMessagePort = async () => {
+
+        if (typeof this.#messagePort === 'undefined') {
+
+          rej('Connection not established .. retrying in 500ms');
+
+          chrome.alarms.onAlarm.removeListener(actionCb);
+          await chrome.alarms.clear(ChromeAlarms.SetupOffscreenDocument);
+
+        } else {
+
+          res(void 0);
+
+          chrome.alarms.onAlarm.removeListener(actionCb);
+          await chrome.alarms.clear(ChromeAlarms.SetupOffscreenDocument);
+
+        }
+
+      };
+
+      const actionCb = async (alarm) => {
+
+        // console.log(alarm.name);
+
+        if (alarm.name === ChromeAlarms.SetupOffscreenDocument) {
+
+          await waitForMessagePort();
+
+        }
+
+      };
+
+      chrome.alarms.onAlarm.addListener(actionCb);
+
+      await chrome.alarms.create(ChromeAlarms.SetupOffscreenDocument, {
+        periodInMinutes: 1 / 120
+      });
+
+    });
+
+  }
+
+  static async #updateDriveData() {
+
+    const token = await getGoogleAuthToken();
+
+    console.assert(typeof token !== 'undefined');
+
+    const output = await uploadClipboardData(token, JSON.stringify(this.#queue));
+
+    // console.log(output);
+    return output;
+
+  }
+
+  static async #listDriveFiles() {
+
+    const token = await getGoogleAuthToken();
+
+    console.assert(typeof token !== 'undefined');
+
+    return getFileList(token);
+
   }
 
 }

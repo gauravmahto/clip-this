@@ -28,6 +28,8 @@ chrome.runtime.onInstalled.addListener(async () => {
 
   await ClipManager.setupOffscreenDocument('off-screen/off-screen.html');
 
+  await ClipManager.initialize();
+
   await ClipManager.startListenClipboard();
 
 })();
