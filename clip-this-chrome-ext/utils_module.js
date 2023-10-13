@@ -43,7 +43,43 @@ export const DriveKind = {
 
 };
 
-export async function setupOffscreenDocument(path) {
+export const firebase = {
+
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  config: {
+    apiKey: 'AIzaSyAQ47aI8WoPO4Q9mTYv7JRS3G6oNwRIU90',
+    authDomain: 'clipthis-401016.firebaseapp.com',
+    projectId: 'clipthis-401016',
+    storageBucket: 'clipthis-401016.appspot.com',
+    messagingSenderId: '759693837281',
+    appId: '1:759693837281:web:2346aa1e3b7a628c9f88a0',
+    measurementId: 'G-TDXZMDYETC'
+  }
+
+};
+
+// ----------------------------- Utils
+
+export function isNotUndefinedAndNull(obj) {
+
+  return (typeof obj !== 'undefined' &&
+    null !== obj);
+
+}
+
+// ----------------------------- Utils
+
+/**
+ * 
+ * @param {string} path 
+ * @param {Array<string>} reasons
+ * @returns 
+ */
+export async function setupOffscreenDocument(path, reasons) {
 
   // Check all windows controlled by the service worker to see if one
   // of them is the offscreen document with the given path
@@ -68,7 +104,7 @@ export async function setupOffscreenDocument(path) {
 
     creating = chrome.offscreen.createDocument({
       url: path,
-      reasons: [chrome.offscreen.Reason.CLIPBOARD],
+      reasons,
       justification: 'Access and write clipboard data'
     });
 
@@ -199,6 +235,20 @@ export async function deleteFile(token, fileId) {
     apiKey: GDriveAPIKey,
     fileId
   });
+
+}
+
+export async function getRawGoogleAuthToken() {
+
+  try {
+
+    return await chrome.identity.getAuthToken();
+
+  } catch {
+
+    return void 0;
+
+  }
 
 }
 

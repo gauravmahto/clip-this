@@ -3,7 +3,7 @@
 import {
   setupOffscreenDocument, ChromeAlarms, ClipboardMessagePortName, Message,
   uploadClipboardData, getGoogleAuthToken,
-  getClipboardFileId, getClipboardFile, getFileList, deleteFile
+  getClipboardFileId, getClipboardFile, getFileList, deleteFile, isNotUndefinedAndNull
 } from './utils_module.js';
 import { CircularQueue } from './circular-queue-module.js';
 
@@ -24,7 +24,7 @@ export class ClipManager {
 
   static async setupOffscreenDocument(path) {
 
-    await setupOffscreenDocument(path);
+    await setupOffscreenDocument(path, [chrome.offscreen.Reason.CLIPBOARD, chrome.offscreen.Reason.LOCAL_STORAGE]);
 
     await this.#waitForMessagePort();
 
@@ -111,7 +111,9 @@ export class ClipManager {
 
       const file = await getClipboardFile(token, fileId);
 
-      if (null !== file) {
+      console.assert(isNotUndefinedAndNull(file));
+
+      if (isNotUndefinedAndNull(file)) {
 
         const fileStr = await file.text();
 
@@ -349,10 +351,12 @@ export class ClipManager {
 
         if (typeof this.#messagePort === 'undefined') {
 
-          rej('Connection not established .. retrying in 500ms');
+          console.warn('Connection not established .. retrying in 500ms');
 
-          chrome.alarms.onAlarm.removeListener(actionCb);
-          await chrome.alarms.clear(ChromeAlarms.SetupOffscreenDocument);
+          // rej('Connection not established .. retrying in 500ms');
+
+          // chrome.alarms.onAlarm.removeListener(actionCb);
+          // await chrome.alarms.clear(ChromeAlarms.SetupOffscreenDocument);
 
         } else {
 

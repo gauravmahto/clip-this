@@ -24,7 +24,8 @@
     "offscreen",
     "tabs",
     "webRequest",
-    "alarms"
+    "alarms",
+    "gcm"
   ],
   "background": {
     "service_worker": "background_worker.js",

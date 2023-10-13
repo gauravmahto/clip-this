@@ -3,12 +3,17 @@
   "version": "1.0.0",
   "description": "Clip This chrome extension helps to sync the clipboard across devices",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "buildm": "node ./esbuild.config.js"
   },
   "author": "Gaurav Mahto",
   "license": "ISC",
   "devDependencies": {
-    "chrome-types": "^0.1.231"
+    "chrome-types": "^0.1.231",
+    "esbuild": "^0.19.4"
+  },
+  "dependencies": {
+    "firebase": "^10.4.0"
   }
 }
